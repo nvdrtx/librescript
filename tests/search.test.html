@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SearchManager tests</title>
+  <style>
+    body { font: 14px/1.5 ui-monospace, Menlo, monospace; padding: 16px; background: #fff; color: #111; }
+    .pass { color: #1a7f37; } .fail { color: #c0392b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>SearchManager tests</h1>
+  <pre id="out"></pre>
+  <script type="module">
+    import { SearchManager } from '../src/search/SearchManager.js';
+
+    // In-memory editor adapter — no DOM involved.
+    function fakeEditor(blocks) {
+      let selection = { start: { block: 0, offset: 0 }, end: { block: 0, offset: 0 } };
+      let scene = 0;
+      const model = blocks.map(([type, text]) => ({ type, text }));
+      return {
+        model,
+        transactions: 0,
+        blocks: () => { scene = 0; return model.map((b) => ({ ...b, sceneNumber: b.type === 'scene_heading' ? ++scene : null })); },
+        selection: () => selection,
+        select: (start, end) => { selection = { start, end }; },
+        replaceRange(start, end, text) {
+          const b = model[start.block];
+          b.text = b.text.slice(0, start.offset) + text + b.text.slice(end.offset);
+        },
+        transaction(fn) { this.transactions++; fn(); },
+      };
+    }
+
+    const doc = () => fakeEditor([
+      ['scene_heading', 'EXT. HARBOUR — DAWN'],
+      ['action', 'Wind over the water. The wind turns.'],
+      ['character', 'ANNA'],
+      ['dialogue', 'The wind is turning.'],
+      ['scene_heading', 'INT. CABIN — NIGHT'],
+      ['action', 'Quiet.'],
+      ['scene_heading', 'EXT. SEA — DAY'],
+      ['scene_heading', 'EXT. SEA — LATER'], // scenes 3,4 … used for prefix tests below
+    ]);
+
+    const results = [];
+    const test = (name, fn) => { try { fn(); results.push([true, name]); } catch (e) { results.push([false, `${name} — ${e.message}`]); } };
+    const eq = (a, b) => { const A = JSON.stringify(a), B = JSON.stringify(b); if (A !== B) throw new Error(`expected ${B}, got ${A}`); };
+    const pos = (m) => m && [m.start.block, m.start.offset, m.end.offset];
+
+    test('finds the first match, case-insensitive by default', () => {
+      const s = new SearchManager(doc()); s.setQuery('wind');
+      eq(pos(s.findNext()), [1, 0, 4]);
+    });
+    test('next continues after the current selection', () => {
+      const s = new SearchManager(doc()); s.setQuery('wind');
+      s.findNext(); eq(pos(s.findNext()), [1, 25, 29]);
+      eq(pos(s.findNext()), [3, 4, 8]);
+    });
+    test('wraps around at the end', () => {
+      const s = new SearchManager(doc()); s.setQuery('wind');
+      s.findNext(); s.findNext(); s.findNext();
+      eq(pos(s.findNext()), [1, 0, 4]);
+    });
+    test('previous goes backwards and wraps to the end', () => {
+      const s = new SearchManager(doc()); s.setQuery('wind');
+      eq(pos(s.findPrevious()), [3, 4, 8]);
+      eq(pos(s.findPrevious()), [1, 25, 29]);
+    });
+    test('case-sensitive skips other cases', () => {
+      const s = new SearchManager(doc()); s.setQuery('Wind'); s.setCaseSensitive(true);
+      eq(s.allMatches().length, 1);
+      eq(pos(s.findNext()), [1, 0, 4]);
+    });
+    test('"search in" limits matches to one block type', () => {
+      const s = new SearchManager(doc()); s.setQuery('wind'); s.setSearchInType('dialogue');
+      eq(s.allMatches().map(pos), [[3, 4, 8]]);
+    });
+    test('hidden blocks are skipped', () => {
+      const e = doc(); const orig = e.blocks;
+      e.blocks = () => orig().map((b, i) => ({ ...b, visible: i !== 1 }));
+      const s = new SearchManager(e); s.setQuery('wind');
+      eq(s.allMatches().map(pos), [[3, 4, 8]]);
+    });
+    test('"#2" jumps to scene 2', () => {
+      const e = doc(); const s = new SearchManager(e); s.setQuery('#2');
+      eq(s.find().block, 4);
+      eq(e.selection().start, { block: 4, offset: 0 });
+    });
+    test('"#" queries never count as text matches', () => {
+      const s = new SearchManager(doc()); s.setQuery('#1');
+      eq(s.allMatches().length, 0);
+    });
+    test('status reports current / total', () => {
+      const s = new SearchManager(doc()); s.setQuery('wind');
+      s.findNext(); s.findNext();
+      eq(s.status(), { total: 3, current: 2 });
+    });
+    test('replace one: only when the selection is a match, then moves on', () => {
+      const e = doc(); const s = new SearchManager(e); s.setQuery('wind'); s.setReplacement('breeze');
+      eq(s.replaceOne(), false); // nothing selected yet → just finds the first match
+      eq(pos(e.selection()), [1, 0, 4]);
+      eq(s.replaceOne(), true);
+      eq(e.model[1].text, 'breeze over the water. The wind turns.');
+      eq(pos(e.selection()), [1, 27, 31]);
+    });
+    test('replace all: every match, one transaction, offsets stay right', () => {
+      const e = doc(); const s = new SearchManager(e); s.setQuery('wind'); s.setReplacement('gust');
+      eq(s.replaceAll(), 3);
+      eq(e.model[1].text, 'gust over the water. The gust turns.');
+      eq(e.model[3].text, 'The gust is turning.');
+      eq(e.transactions, 1);
+    });
+    test('replacement containing the query does not loop', () => {
+      const e = doc(); const s = new SearchManager(e); s.setQuery('wind'); s.setReplacement('windy wind');
+      eq(s.replaceAll(), 3);
+      eq(s.allMatches().length, 6);
+    });
+    test('read-only blocks replacing', () => {
+      const e = doc(); const s = new SearchManager(e); s.setQuery('wind'); s.setReplacement('x'); s.setReadOnly(true);
+      eq(s.replaceAll(), 0);
+      eq(e.model[1].text.startsWith('Wind'), true);
+    });
+    test('empty query does nothing', () => {
+      const s = new SearchManager(doc());
+      eq(s.findNext(), null);
+    });
+
+    const out = document.getElementById('out');
+    out.innerHTML = results.map(([ok, n]) => `<span class="${ok ? 'pass' : 'fail'}">${ok ? '✓' : '✗'} ${n}</span>`).join('\n');
+    const failed = results.filter(([ok]) => !ok).length;
+    out.innerHTML += `\n\n<b class="${failed ? 'fail' : 'pass'}">${results.length - failed}/${results.length} passed</b>`;
+    window.testSummary = { total: results.length, failed };
+  </script>
+</body>
+</html>

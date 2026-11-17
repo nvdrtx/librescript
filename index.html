@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Librescript</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="home" class="home"></div>
+
+  <div class="app">
+    <nav class="rail" aria-label="Modules">
+      <button class="brand" title="Fermer l'histoire et revenir à l'accueil (⌘W)" aria-label="Accueil">L</button>
+      <button data-view="project" title="Projet (⌥⌘0)"><span class="ico">◧</span><span>Projet</span></button>
+      <button data-view="synopsis" title="Synopsis (⌥⌘7)"><span class="ico">¶</span><span>Synopsis</span></button>
+      <button data-view="script" class="on" title="Scénario (⌥⌘1)"><span class="ico">✎</span><span>Scénario</span></button>
+      <button data-view="cards" title="Fiches (⌥⌘2)"><span class="ico">▦</span><span>Fiches</span></button>
+      <button data-view="characters" title="Personnages (⌥⌘3)"><span class="ico">☺</span><span>Personnages</span></button>
+      <button data-view="locations" title="Lieux (⌥⌘4)"><span class="ico">⌂</span><span>Lieux</span></button>
+      <button data-view="stats" title="Statistiques (⌥⌘5)"><span class="ico">▤</span><span>Stats</span></button>
+      <button data-view="title" title="Page de titre (⌥⌘6)"><span class="ico">❡</span><span>Titre</span></button>
+      <button class="rail-bottom" data-act="settings" title="Réglages : thème et couleurs (⌘,)"><span class="ico">⚙</span><span>Réglages</span></button>
+    </nav>
+
+    <div class="main">
+      <header class="topbar">
+        <strong class="doc-title">Librescript</strong>
+        <label class="script-only">Bloc
+          <select id="block-type" aria-label="Type de bloc"></select>
+        </label>
+        <span class="spacer"></span>
+        <span class="save-state" aria-live="polite"></span>
+        <span class="doc-stats"></span>
+        <button id="open-search" class="script-only" title="Rechercher (⌘F)">Rechercher</button>
+        <details class="menu">
+          <summary>Exporter</summary>
+          <div class="menu-pop">
+            <button data-export="pdf">PDF…</button>
+            <button data-export="fdx">Final Draft (.fdx)…</button>
+            <button data-export="fountain">Fountain (.fountain)…</button>
+            <button data-export="synopsis">Synopsis (PDF)…</button>
+          </div>
+        </details>
+      </header>
+
+      <section id="view-script" class="view on">
+        <aside id="navigator" class="navigator" aria-label="Navigateur de scènes"></aside>
+        <div class="script-col">
+          <div id="search" class="search-toolbar"></div>
+          <div class="page-wrap">
+            <article id="editor" class="page" aria-label="Scénario"></article>
+          </div>
+        </div>
+      </section>
+      <section id="view-project" class="view scroll"></section>
+      <section id="view-synopsis" class="view scroll"></section>
+      <section id="view-cards" class="view scroll"></section>
+      <section id="view-characters" class="view scroll"></section>
+      <section id="view-locations" class="view scroll"></section>
+      <section id="view-stats" class="view scroll"></section>
+      <section id="view-title" class="view scroll"></section>
+    </div>
+  </div>
+
+  <div id="print-root" aria-hidden="true"></div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

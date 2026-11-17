@@ -1,0 +1,8 @@
+# Built app (rebuild with ./build-mac.sh)
+build/
+
+# macOS
+.DS_Store
+
+# Local editor/agent settings
+.claude/
