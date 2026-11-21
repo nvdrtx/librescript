@@ -776,7 +776,7 @@ extension AppDelegate {
             webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { result in
                 switch result {
                 case .success(let v):
-                    report[key] = (v as? String).flatMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) } ?? v ?? NSNull()
+                    report[key] = (v as? String).flatMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) } ?? v
                 case .failure(let e):
                     report[key] = "ERREUR: \(e)"
                 }

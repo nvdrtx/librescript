@@ -4,6 +4,27 @@
 
 ![Le scénario, avec la liste des scènes](docs/screenshots/scenario.jpg)
 
+## Installer
+
+**En une ligne** (recommandé) : ouvre le Terminal (Applications → Utilitaires → Terminal), colle cette ligne et appuie sur Entrée :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nvdrtx/librescript/main/install.sh | bash
+```
+
+Le script télécharge la dernière version, vérifie son empreinte SHA-256, installe Librescript dans **Applications** et l'ouvre. Relance la même ligne pour mettre à jour. Pour désinstaller (tes histoires sont conservées) :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nvdrtx/librescript/main/install.sh | bash -s -- --uninstall
+```
+
+**Avec le .dmg** : télécharge [`Librescript.dmg`](https://github.com/nvdrtx/librescript/releases/latest/download/Librescript.dmg), ouvre-le et glisse Librescript dans le dossier Applications.
+
+> Librescript n'est pas encore signée par Apple. Si tu l'installes avec le `.dmg`, macOS peut la bloquer au premier lancement :
+> ouvre **Réglages Système → Confidentialité et sécurité**, puis clique sur **Ouvrir quand même** à côté de « Librescript a été bloquée ». Il ne faut le faire qu'une fois. L'installation en une ligne évite cette étape.
+
+macOS 13 (Ventura) ou plus récent, Mac Apple Silicon ou Intel. Tes histoires sont rangées dans `Documents/Librescript`.
+
 ## Fonctionnalités
 
 - **Éditeur au format scénario** : titres de scène, action, personnages, didascalies, dialogues, transitions. `Entrée` passe au bloc suivant logique, `Tab` change le type. Les sauts de page sont calculés comme sur papier (US Letter, Courier 12 pt, 1 page ≈ 1 minute).
@@ -28,7 +49,7 @@
 
 ![Thème Nuit avec la page claire](docs/screenshots/theme-nuit.jpg)
 
-## Installer depuis les sources
+## Compiler depuis les sources
 
 Il faut un Mac (macOS 13 ou plus récent) avec les outils de développement d'Apple (Xcode ou `xcode-select --install`).
 
@@ -39,6 +60,13 @@ cd librescript
 ```
 
 L'app est compilée dans `build/Librescript.app` puis copiée dans `~/Applications`. Sans `--install`, elle reste dans `build/`.
+
+Pour fabriquer les installateurs (`dist/Librescript.dmg`, `dist/Librescript.zip`, `dist/SHA256SUMS`) et les publier comme release GitHub :
+
+```bash
+./make-release.sh            # construit dist/
+./make-release.sh --publish  # et crée la release v<version> (avec l'outil gh connecté)
+```
 
 > L'app compilée est signée uniquement pour la machine qui la construit. Pour distribuer un `.app` téléchargeable, il faut la signer avec un certificat Apple « Developer ID » et la faire notariser.
 
@@ -70,6 +98,7 @@ src/model/                    logique pure : analyse, pagination, exports, impor
 src/views/                    accueil, navigateur, fiches, personnages, synopsis, stats, réglages…
 macos/main.swift              app macOS : fenêtre, menus, fichiers, PDF, enregistrement automatique
 build-mac.sh, run-tests.sh    compilation et tests
+make-release.sh, install.sh   installateurs (.dmg, .zip) et installation en une ligne
 ```
 
 L'interface web fonctionne aussi dans un navigateur (servie par un petit serveur local, par exemple `python3 -m http.server`) ; elle enregistre alors un brouillon dans le navigateur. L'import PDF, le dossier de projets et la suppression de fichiers ne sont disponibles que dans l'app Mac.

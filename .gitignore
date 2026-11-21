@@ -6,3 +6,6 @@ build/
 
 # Local editor/agent settings
 .claude/
+
+# Release files (rebuild with ./make-release.sh)
+dist/
