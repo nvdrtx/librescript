@@ -52,7 +52,8 @@ quit_running_app() {
 if [ "$UNINSTALL" = 1 ]; then
   quit_running_app
   removed=0
-  for dir in "$DEST" /Applications "$HOME/Applications"; do
+  if [ -n "${LIBRESCRIPT_INSTALL_DIR:-}" ]; then DIRS="$DEST"; else DIRS="/Applications $HOME/Applications"; fi
+  for dir in $DIRS; do
     if [ -d "$dir/$APP_NAME" ]; then rm -rf "$dir/$APP_NAME"; say "✓ Supprimée : $dir/$APP_NAME"; removed=1; fi
   done
   [ "$removed" = 1 ] || say "Librescript n'était pas installée."
